@@ -256,38 +256,55 @@ async function changeLanguage(lang) {
 
 // ── Load application ──
 async function loadApp() {
+    console.log("Starting loadApp...");
     showScreen("screen-loading");
+    const loaderText = $(".loader-text");
+    if (loaderText) loaderText.textContent = "Loading user profile...";
 
     try {
         // 1. Get user profile
+        console.log("Fetching user profile...");
         currentUser = await api("GET", "/user/me");
+        console.log("User profile loaded:", currentUser);
+
+        if (loaderText) loaderText.textContent = "Loading family data...";
 
         // 2. Try to get family
         let family = null;
         try {
+            console.log("Fetching family info...");
             family = await api("GET", "/family/me");
-        } catch {
-            // User has no family yet
+            console.log("Family info loaded:", family);
+        } catch (e) {
+            console.log("User has no family yet or error:", e.message);
         }
 
         if (!family) {
+            console.log("Showing no-family screen");
             showScreen("screen-no-family");
             return;
         }
 
-        // 3. Show products screen
+        if (loaderText) loaderText.textContent = "Loading products...";
+
+        // 3. Set UI info
         $("#family-info").textContent = `Invite code: ${family.invite_code}`;
         $("#invite-code-display").textContent = family.invite_code;
         $("#select-lang").value = currentUser.language || "en";
 
         // 4. Load products
+        console.log("Fetching products...");
         products = await api("GET", "/products/");
+        console.log("Products loaded:", products.length);
         renderProducts();
 
         showScreen("screen-products");
     } catch (err) {
         console.error("Failed to load app:", err);
-        toast("Connection error. Retrying…");
+        if (loaderText) {
+            loaderText.innerHTML = `<span style="color:var(--destructive)">Error: ${err.message}</span><br>Retrying in 3s...`;
+        }
+        toast("Connection error: " + err.message);
         setTimeout(loadApp, 3000);
     }
 }
