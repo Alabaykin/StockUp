@@ -6,6 +6,5 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o notifier main.go
-
-CMD ["./notifier"]
+# Use go run for development so volume mounts work correctly
+CMD ["go", "run", "main.go"]
