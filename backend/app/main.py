@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 import redis.asyncio as redis
 from app.core.config import settings
 
+from app.api.routes import family, products
+
 redis_client = None
 
 @asynccontextmanager
@@ -14,8 +16,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="StockUp API", lifespan=lifespan)
 
+app.include_router(family.router, prefix="/api/v1/family", tags=["Family"])
+app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "service": "StockUp Backend"}
 
-# TODO: Добавить роуты для API и инициализацию Aiogram
