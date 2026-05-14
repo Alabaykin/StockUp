@@ -33,9 +33,10 @@ async def create_product(
     if not current_user.family_id:
         raise HTTPException(status_code=400, detail="User is not in a family")
 
-    # NLP processing
-    lemma = normalize_product_name(product_in.name)
-    emoji = get_emoji_for_product(lemma)
+    # NLP processing (use the user's preferred language)
+    lang = current_user.language or "en"
+    lemma = normalize_product_name(product_in.name, lang=lang)
+    emoji = get_emoji_for_product(lemma, lang=lang)
 
     new_product = Product(
         family_id=current_user.family_id,
@@ -74,9 +75,10 @@ async def update_product(
 
     update_data = product_in.model_dump(exclude_unset=True)
     
+    lang = current_user.language or "en"
     if "name" in update_data:
-        product.lemma = normalize_product_name(update_data["name"])
-        product.emoji = get_emoji_for_product(product.lemma)
+        product.lemma = normalize_product_name(update_data["name"], lang=lang)
+        product.emoji = get_emoji_for_product(product.lemma, lang=lang)
 
     for key, value in update_data.items():
         setattr(product, key, value)
