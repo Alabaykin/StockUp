@@ -72,6 +72,10 @@ body {
 
 /* ── Loading Screen ── */
 #screen-loading {
+    display: none;
+}
+
+#screen-loading.active {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -79,9 +83,6 @@ body {
     padding: 0;
 }
 
-#screen-loading.active {
-    display: flex;
-}
 
 .loader-wrap {
     text-align: center;
