@@ -3,18 +3,16 @@ from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.core.config import settings
 
-bot = Bot(token=settings.BOT_TOKEN)
+# Global variables, but initialized only if token is valid
+bot = None
 dp = Dispatcher()
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     builder = InlineKeyboardBuilder()
-    # Replace with your actual web app URL if deployed, 
-    # but for local testing it's usually set in the BotFather settings.
-    # We'll use a placeholder or the one from settings if we add it.
     builder.row(types.InlineKeyboardButton(
         text="Open StockUp 🛒", 
-        web_app=types.WebAppInfo(url="https://your-domain.com/") # This is just a placeholder
+        web_app=types.WebAppInfo(url="https://your-domain.com/")
     ))
     
     await message.answer(
@@ -25,9 +23,16 @@ async def cmd_start(message: types.Message):
     )
 
 async def start_bot():
-    if not settings.BOT_TOKEN or settings.BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
-        print("Bot token not set, skipping bot startup.")
+    global bot
+    
+    # Simple validation check
+    if not settings.BOT_TOKEN or ":" not in settings.BOT_TOKEN:
+        print("Telegram Bot: Invalid or missing token. Skipping bot startup.")
         return
     
-    print("Starting Telegram Bot...")
-    await dp.start_polling(bot)
+    try:
+        bot = Bot(token=settings.BOT_TOKEN)
+        print("Starting Telegram Bot...")
+        await dp.start_polling(bot)
+    except Exception as e:
+        print(f"Failed to start Telegram Bot: {e}")
