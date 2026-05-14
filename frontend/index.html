@@ -1,31 +1,161 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockUp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StockUp — Family Shopping</title>
+    <meta name="description" content="Manage your family shopping list in Telegram">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
     <div id="app">
-        <header>
-            <h1 id="greeting">Привет!</h1>
-        </header>
-        <main>
-            <div class="product-list">
-                <!-- Здесь будут товары -->
-                <div class="product-item">
-                    <span class="emoji">🥛</span>
-                    <div class="product-info">
-                        <h3>Молоко</h3>
-                        <p>Остаток: 1.5 л</p>
+
+        <!-- ═══════ LOADING SCREEN ═══════ -->
+        <div id="screen-loading" class="screen active">
+            <div class="loader-wrap">
+                <div class="loader-ring"></div>
+                <p class="loader-text">Loading StockUp…</p>
+            </div>
+        </div>
+
+        <!-- ═══════ NO FAMILY SCREEN ═══════ -->
+        <div id="screen-no-family" class="screen">
+            <div class="empty-state">
+                <div class="empty-icon">👨‍👩‍👧‍👦</div>
+                <h1>Welcome to StockUp!</h1>
+                <p class="subtitle">Create a family group or join an existing one to start managing your shopping list together.</p>
+                <button id="btn-create-family" class="btn btn-primary btn-lg">
+                    <span class="btn-icon">✨</span> Create Family
+                </button>
+                <div class="divider"><span>or</span></div>
+                <button id="btn-join-family" class="btn btn-secondary btn-lg">
+                    <span class="btn-icon">🔗</span> Join with Code
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══════ MAIN PRODUCTS SCREEN ═══════ -->
+        <div id="screen-products" class="screen">
+            <header class="app-header">
+                <div class="header-left">
+                    <h1 class="header-title">Shopping List</h1>
+                    <p class="header-subtitle" id="family-info"></p>
+                </div>
+                <div class="header-right">
+                    <button id="btn-settings" class="btn-icon-only" aria-label="Settings">⚙️</button>
+                </div>
+            </header>
+
+            <div id="product-list" class="product-list">
+                <!-- Products will be rendered here -->
+            </div>
+
+            <div id="empty-products" class="empty-state small hidden">
+                <div class="empty-icon">🛒</div>
+                <p>Your list is empty.<br>Tap <strong>+</strong> to add a product!</p>
+            </div>
+
+            <button id="btn-add-product" class="fab" aria-label="Add product">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path d="M14 5V23M5 14H23" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- ═══════ ADD / EDIT PRODUCT MODAL ═══════ -->
+        <div id="modal-product" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-sheet">
+                <div class="modal-handle"></div>
+                <h2 id="modal-product-title">Add Product</h2>
+                <form id="form-product" autocomplete="off">
+                    <div class="form-group">
+                        <label for="input-name">Product name</label>
+                        <input type="text" id="input-name" placeholder="e.g. Green apples" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="input-qty">Quantity</label>
+                            <input type="number" id="input-qty" placeholder="0" step="0.1" min="0" value="1">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="input-unit">Unit</label>
+                            <select id="input-unit">
+                                <option value="pcs">pcs</option>
+                                <option value="kg">kg</option>
+                                <option value="l">l</option>
+                                <option value="g">g</option>
+                                <option value="pack">pack</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="input-desc">Note <span class="optional">(optional)</span></label>
+                        <input type="text" id="input-desc" placeholder="e.g. Buy at Costco">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-save-product">
+                        <span class="btn-icon">💾</span> Save
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══════ JOIN FAMILY MODAL ═══════ -->
+        <div id="modal-join" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-sheet">
+                <div class="modal-handle"></div>
+                <h2>Join Family</h2>
+                <form id="form-join" autocomplete="off">
+                    <div class="form-group">
+                        <label for="input-invite-code">Invite Code</label>
+                        <input type="text" id="input-invite-code" placeholder="e.g. ABC12DEF" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg btn-block">
+                        <span class="btn-icon">🔗</span> Join
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══════ SETTINGS MODAL ═══════ -->
+        <div id="modal-settings" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-sheet">
+                <div class="modal-handle"></div>
+                <h2>Settings</h2>
+
+                <div class="settings-section">
+                    <h3>Family</h3>
+                    <div class="setting-row">
+                        <span class="setting-label">Invite code</span>
+                        <button id="btn-copy-code" class="btn btn-sm btn-outline">
+                            <span id="invite-code-display">—</span> 📋
+                        </button>
                     </div>
                 </div>
+
+                <div class="settings-section">
+                    <h3>Language</h3>
+                    <div class="setting-row">
+                        <span class="setting-label">Product language</span>
+                        <select id="select-lang" class="setting-select">
+                            <option value="en">🇺🇸 English</option>
+                            <option value="ru">🇷🇺 Русский</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="btn-close-settings" class="btn btn-secondary btn-lg btn-block" style="margin-top:24px">Close</button>
             </div>
-            <button id="addBtn" class="tg-button">Добавить продукт</button>
-        </main>
+        </div>
+
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
