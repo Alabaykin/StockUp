@@ -7,6 +7,7 @@ const API_BASE = "/api/v1";
 // ── State ──
 let currentUser = null;
 let products = [];
+let categories = [];
 let editingProductId = null;
 
 // ── Telegram Web App ──
@@ -82,7 +83,10 @@ function renderProducts() {
             <div class="product-emoji">${p.emoji || "📦"}</div>
             <div class="product-details">
                 <div class="product-name">${escHtml(p.name)}</div>
-                <div class="product-meta">${p.description ? escHtml(p.description) : ""}</div>
+                <div class="product-meta">
+                    ${p.category_id ? `<span class="category-badge">${escHtml(categories.find(c => c.id === p.category_id)?.name || "")}</span>` : ""}
+                    ${p.description ? escHtml(p.description) : ""}
+                </div>
             </div>
             <div class="product-qty">
                 <button class="qty-btn" data-action="dec" data-id="${p.id}">−</button>
@@ -151,6 +155,7 @@ function openAddProduct() {
     $("#modal-product-title").textContent = "Add Product";
     $("#btn-save-product").innerHTML = '<span class="btn-icon">💾</span> Save';
     $("#form-product").reset();
+    $("#select-category").value = "";
     $("#input-qty").value = "1";
     showModal("modal-product");
     setTimeout(() => $("#input-name").focus(), 200);
@@ -168,6 +173,7 @@ function openEditProduct(productId) {
     $("#input-qty").value = product.quantity;
     $("#input-unit").value = product.unit || "pcs";
     $("#input-desc").value = product.description || "";
+    $("#select-category").value = product.category_id || "";
     showModal("modal-product");
 }
 
@@ -180,6 +186,7 @@ async function saveProduct(e) {
         quantity: parseFloat($("#input-qty").value) || 0,
         unit: $("#input-unit").value,
         description: $("#input-desc").value.trim() || null,
+        category_id: $("#select-category").value || null
     };
 
     if (!body.name) {
@@ -292,11 +299,18 @@ async function loadApp() {
         $("#invite-code-display").textContent = family.invite_code;
         $("#select-lang").value = currentUser.language || "en";
 
-        // 4. Load products
-        console.log("Fetching products...");
-        products = await api("GET", "/products/");
-        console.log("Products loaded:", products.length);
+        // 4. Load products and categories
+        console.log("Fetching products & categories...");
+        const [prodList, catList] = await Promise.all([
+            api("GET", "/products/"),
+            api("GET", "/categories/")
+        ]);
+        products = prodList;
+        categories = catList;
+        
+        console.log("Data loaded:", products.length, "products,", categories.length, "categories");
         renderProducts();
+        renderCategorySelect();
 
         showScreen("screen-products");
     } catch (err) {
@@ -309,8 +323,30 @@ async function loadApp() {
     }
 }
 
+function renderCategorySelect() {
+    const select = $("#select-category");
+    const val = select.value;
+    select.innerHTML = '<option value="">No category</option>' + 
+        categories.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join("");
+    select.value = val;
+}
+
 // ── Event Listeners ──
 document.addEventListener("DOMContentLoaded", () => {
+    ...
+    // Category management
+    $("#btn-add-category").onclick = async () => {
+        const name = prompt("Enter new category name:");
+        if (!name) return;
+        try {
+            const newCat = await api("POST", "/categories/", { name });
+            categories.push(newCat);
+            renderCategorySelect();
+            $("#select-category").value = newCat.id;
+        } catch (err) {
+            toast("Failed to create category");
+        }
+    };
     // Init Telegram Web App
     if (tg) {
         tg.ready();
