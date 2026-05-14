@@ -7,11 +7,17 @@ class UserCreate(BaseModel):
     username: Optional[str] = None
     first_name: Optional[str] = None
     family_id: Optional[UUID] = None
+    language: str = "en"
 
 class UserRead(BaseModel):
     telegram_id: int
     username: Optional[str] = None
     first_name: Optional[str] = None
     family_id: Optional[UUID] = None
+    language: str = "en"
 
     model_config = ConfigDict(from_attributes=True)
+
+class UserLanguageUpdate(BaseModel):
+    language: str  # "en" or "ru"
+
