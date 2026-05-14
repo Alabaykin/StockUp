@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +10,13 @@ import (
 
 	"github.com/redis/go-redis/v9"
 )
+
+type Notification struct {
+	Type         string `json:"type"`
+	ProductName  string `json:"product_name"`
+	ProductEmoji string `json:"product_emoji"`
+	FamilyID     string `json:"family_id"`
+}
 
 func main() {
 	redisURL := os.Getenv("REDIS_URL")
@@ -48,8 +56,17 @@ func main() {
 	ch := pubsub.Channel()
 
 	for msg := range ch {
-		// Example message format: "user_id|Message text"
-		fmt.Printf("Received message: %s\n", msg.Payload)
-		// TODO: Parse message and use Telegram API (HTTP POST) to send to user
+		var n Notification
+		err := json.Unmarshal([]byte(msg.Payload), &n)
+		if err != nil {
+			log.Printf("Error unmarshaling notification: %v", err)
+			continue
+		}
+
+		fmt.Printf("📢 [NOTIFICATION] Family %s is OUT OF STOCK: %s %s\n", 
+			n.FamilyID[:8], n.ProductEmoji, n.ProductName)
+		
+		// TODO: Implement actual Telegram API call here
+		// Example: sendNotificationToFamily(n.FamilyID, "Item out of stock: ...")
 	}
 }
