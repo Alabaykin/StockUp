@@ -1,6 +1,9 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import redis.asyncio as redis
+import os
 from app.core.config import settings
 
 from app.api.routes import family, products, user
@@ -24,3 +27,15 @@ app.include_router(user.router, prefix="/api/v1/user", tags=["User"])
 async def health_check():
     return {"status": "ok", "service": "StockUp Backend"}
 
+# ── Serve frontend static files ──
+# In Docker: /frontend is mounted; locally: fallback to relative path
+FRONTEND_DIR = "/frontend" if os.path.isdir("/frontend") else os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend"
+)
+
+if os.path.isdir(FRONTEND_DIR):
+    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
