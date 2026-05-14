@@ -9,6 +9,8 @@ from app.db.models import Product, User
 from app.schemas.product import ProductRead, ProductCreate, ProductUpdate
 from app.api.auth import get_current_user
 from app.services.nlp import normalize_product_name, get_emoji_for_product
+from app.core.redis import get_redis
+import json
 
 router = APIRouter()
 
@@ -86,6 +88,18 @@ async def update_product(
     await db.commit()
     await db.refresh(product)
     
+    # Check if quantity hit zero to notify family members
+    if product.quantity == 0:
+        r = await get_redis()
+        if r:
+            payload = {
+                "type": "out_of_stock",
+                "product_name": product.name,
+                "product_emoji": product.emoji,
+                "family_id": str(product.family_id)
+            }
+            await r.publish("notifications", json.dumps(payload))
+
     return product
 
 @router.delete("/{product_id}")

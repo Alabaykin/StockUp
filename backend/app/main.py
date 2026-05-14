@@ -9,14 +9,12 @@ from app.core.config import settings
 import asyncio
 from app.api.routes import family, products, user
 from app.core.bot import start_bot
-
-redis_client = None
+from app.core.redis import init_redis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global redis_client
     # Start Redis
-    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+    r_client = await init_redis()
     
     # Start Telegram Bot in background
     bot_task = asyncio.create_task(start_bot())
@@ -25,7 +23,7 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     bot_task.cancel()
-    await redis_client.close()
+    await r_client.close()
 
 app = FastAPI(title="StockUp API", lifespan=lifespan)
 
