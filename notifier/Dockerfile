@@ -2,10 +2,10 @@ FROM golang:1.21-alpine
 
 WORKDIR /app
 
-COPY go.mod ./
-# RUN go mod download # Раскомментировать когда добавим зависимости
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
-# RUN go build -o notifier main.go
+RUN go build -o notifier main.go
 
-CMD ["go", "run", "main.go"]
+CMD ["./notifier"]
