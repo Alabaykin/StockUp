@@ -23,6 +23,7 @@ class User(Base):
     family_id = Column(UUID(as_uuid=True), ForeignKey("families.id"), nullable=True)
     username = Column(String, nullable=True)
     first_name = Column(String, nullable=True)
+    language = Column(String, default="en", nullable=False, server_default="en")
 
     family = relationship("Family", back_populates="users")
     subscriptions = relationship("ProductSubscription", back_populates="user")
