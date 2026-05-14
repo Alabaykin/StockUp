@@ -39,9 +39,8 @@ async def get_current_user(
 ) -> User:
     user_data = validate_telegram_data(x_tg_init_data, settings.BOT_TOKEN)
     if not user_data or "id" not in user_data:
-        # For local development we might allow a fallback, but let's strictly enforce it
-        # Actually, let's allow a fallback if initData is "dev_mode" for local testing
-        if x_tg_init_data == "dev_mode" and settings.BOT_TOKEN == "":
+        # Allow dev_mode if token is empty, None, or the default placeholder
+        if x_tg_init_data == "dev_mode" and settings.BOT_TOKEN in ["", None, "YOUR_TELEGRAM_BOT_TOKEN"]:
              user_data = {"id": 111111111, "first_name": "DevUser", "username": "dev"}
         else:
             raise HTTPException(status_code=401, detail="Invalid Telegram initData")
