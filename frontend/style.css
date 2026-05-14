@@ -358,6 +358,25 @@ body {
     text-overflow: ellipsis;
 }
 
+.btn-sub {
+    background: none;
+    border: none;
+    font-size: 20px;
+    padding: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    opacity: 0.3;
+}
+
+.btn-sub.active {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px var(--tg-theme-button-color, #2481cc));
+}
+
+.btn-sub:active {
+    transform: scale(1.2);
+}
+
 .product-qty {
     display: flex;
     align-items: center;

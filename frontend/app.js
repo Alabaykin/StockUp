@@ -88,6 +88,9 @@ function renderProducts() {
                     ${p.description ? escHtml(p.description) : ""}
                 </div>
             </div>
+            <button class="btn-sub ${p.is_subscribed ? 'active' : ''}" data-id="${p.id}" title="Notify when out of stock">
+                ${p.is_subscribed ? '🔔' : '🔕'}
+            </button>
             <div class="product-qty">
                 <button class="qty-btn" data-action="dec" data-id="${p.id}">−</button>
                 <div>
@@ -104,8 +107,16 @@ function renderProducts() {
     list.querySelectorAll(".product-card").forEach((card) => {
         card.addEventListener("click", (e) => {
             // Don't trigger if clicking qty buttons
-            if (e.target.closest(".qty-btn")) return;
+            if (e.target.closest(".qty-btn") || e.target.closest(".btn-sub")) return;
             openEditProduct(card.dataset.id);
+        });
+    });
+
+    // Sub buttons
+    list.querySelectorAll(".btn-sub").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleSubscription(btn.dataset.id);
         });
     });
 
@@ -146,6 +157,21 @@ async function handleQtyChange(productId, action) {
         renderProducts();
     } catch (err) {
         toast("Error: " + err.message);
+    }
+}
+
+// ── Toggle Subscription ──
+async function toggleSubscription(productId) {
+    try {
+        const res = await api("POST", "/subscriptions/toggle", { product_id: productId });
+        const product = products.find(p => p.id === productId);
+        if (product) {
+            product.is_subscribed = (res.status === "subscribed");
+            renderProducts();
+            toast(res.status === "subscribed" ? "Subscribed to alerts" : "Unsubscribed");
+        }
+    } catch (err) {
+        toast("Failed to toggle subscription");
     }
 }
 
