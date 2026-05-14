@@ -1,0 +1,65 @@
+import hmac
+import hashlib
+from urllib.parse import parse_qsl
+from fastapi import Header, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.core.config import settings
+from app.db.database import get_db
+from app.db.models import User
+import json
+
+def validate_telegram_data(init_data: str, bot_token: str) -> dict:
+    try:
+        parsed_data = dict(parse_qsl(init_data))
+        if "hash" not in parsed_data:
+            return None
+
+        hash_from_telegram = parsed_data.pop("hash")
+        
+        # Sort keys alphabetically
+        data_check_string = "\n".join(
+            f"{k}={v}" for k, v in sorted(parsed_data.items())
+        )
+        
+        secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        
+        if calculated_hash != hash_from_telegram:
+            return None
+            
+        user_data = json.loads(parsed_data.get("user", "{}"))
+        return user_data
+    except Exception:
+        return None
+
+async def get_current_user(
+    x_tg_init_data: str = Header(..., description="Telegram initData string"),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    user_data = validate_telegram_data(x_tg_init_data, settings.BOT_TOKEN)
+    if not user_data or "id" not in user_data:
+        # For local development we might allow a fallback, but let's strictly enforce it
+        # Actually, let's allow a fallback if initData is "dev_mode" for local testing
+        if x_tg_init_data == "dev_mode" and settings.BOT_TOKEN == "":
+             user_data = {"id": 111111111, "first_name": "DevUser", "username": "dev"}
+        else:
+            raise HTTPException(status_code=401, detail="Invalid Telegram initData")
+    
+    telegram_id = user_data["id"]
+    
+    # Get or create user
+    result = await db.execute(select(User).where(User.telegram_id == telegram_id))
+    user = result.scalars().first()
+    
+    if not user:
+        user = User(
+            telegram_id=telegram_id,
+            first_name=user_data.get("first_name"),
+            username=user_data.get("username")
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        
+    return user
