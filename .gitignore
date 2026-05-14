@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# Go
+/notifier/notifier
+/notifier/*.exe
+/notifier/*.exe~
+/notifier/*.dll
+/notifier/*.so
+/notifier/*.dylib
+/notifier/*.test
+/notifier/*.out
+
+# Node/Frontend
+node_modules/
+dist/
+.DS_Store
