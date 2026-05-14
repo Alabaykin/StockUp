@@ -27,5 +27,6 @@ class ProductRead(ProductBase):
     family_id: UUID
     lemma: Optional[str] = None
     emoji: Optional[str] = None
+    is_subscribed: bool = False
 
     model_config = ConfigDict(from_attributes=True)

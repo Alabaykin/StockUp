@@ -5,7 +5,7 @@ from typing import List
 from uuid import UUID
 
 from app.db.database import get_db
-from app.db.models import Product, User
+from app.db.models import Product, User, ProductSubscription
 from app.schemas.product import ProductRead, ProductCreate, ProductUpdate
 from app.api.auth import get_current_user
 from app.services.nlp import normalize_product_name, get_emoji_for_product
@@ -22,8 +22,19 @@ async def get_products(
     if not current_user.family_id:
         raise HTTPException(status_code=400, detail="User is not in a family")
 
-    result = await db.execute(select(Product).where(Product.family_id == current_user.family_id))
+    # Fetch products and check if current user is subscribed to each
+    stmt = select(Product).where(Product.family_id == current_user.family_id)
+    result = await db.execute(stmt)
     products = result.scalars().all()
+    
+    # Check subscriptions for current user
+    sub_stmt = select(ProductSubscription.product_id).where(ProductSubscription.user_id == current_user.telegram_id)
+    sub_result = await db.execute(sub_stmt)
+    subscribed_ids = set(sub_result.scalars().all())
+    
+    for p in products:
+        p.is_subscribed = p.id in subscribed_ids
+        
     return products
 
 @router.post("/", response_model=ProductRead)
@@ -90,13 +101,19 @@ async def update_product(
     
     # Check if quantity hit zero to notify family members
     if product.quantity == 0:
+        # Fetch subscribers for this product
+        sub_stmt = select(ProductSubscription.user_id).where(ProductSubscription.product_id == product.id)
+        sub_result = await db.execute(sub_stmt)
+        subscribers = sub_result.scalars().all()
+
         r = await get_redis()
         if r:
             payload = {
                 "type": "out_of_stock",
                 "product_name": product.name,
                 "product_emoji": product.emoji,
-                "family_id": str(product.family_id)
+                "family_id": str(product.family_id),
+                "subscribers": subscribers
             }
             await r.publish("notifications", json.dumps(payload))
 

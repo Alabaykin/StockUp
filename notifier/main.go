@@ -12,10 +12,11 @@ import (
 )
 
 type Notification struct {
-	Type         string `json:"type"`
-	ProductName  string `json:"product_name"`
-	ProductEmoji string `json:"product_emoji"`
-	FamilyID     string `json:"family_id"`
+	Type         string  `json:"type"`
+	ProductName  string  `json:"product_name"`
+	ProductEmoji string  `json:"product_emoji"`
+	FamilyID     string  `json:"family_id"`
+	Subscribers  []int64 `json:"subscribers"`
 }
 
 func main() {
@@ -63,8 +64,8 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("📢 [NOTIFICATION] Family %s is OUT OF STOCK: %s %s\n", 
-			n.FamilyID[:8], n.ProductEmoji, n.ProductName)
+		fmt.Printf("📢 [NOTIFICATION] Family %s is OUT OF STOCK: %s %s. Notifying users: %v\n", 
+			n.FamilyID[:8], n.ProductEmoji, n.ProductName, n.Subscribers)
 		
 		// TODO: Implement actual Telegram API call here
 		// Example: sendNotificationToFamily(n.FamilyID, "Item out of stock: ...")
