@@ -7,7 +7,7 @@ import os
 from app.core.config import settings
 
 import asyncio
-from app.api.routes import family, products, user
+from app.api.routes import family, products, user, categories
 from app.core.bot import start_bot
 from app.core.redis import init_redis
 
@@ -29,6 +29,7 @@ app = FastAPI(title="StockUp API", lifespan=lifespan)
 
 app.include_router(family.router, prefix="/api/v1/family", tags=["Family"])
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
+app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])
 app.include_router(user.router, prefix="/api/v1/user", tags=["User"])
 
 @app.get("/health")
