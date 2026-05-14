@@ -88,6 +88,9 @@ function renderProducts() {
                     ${p.description ? escHtml(p.description) : ""}
                 </div>
             </div>
+            <button class="btn-request" data-id="${p.id}" title="Request purchase">
+                🛒
+            </button>
             <button class="btn-sub ${p.is_subscribed ? 'active' : ''}" data-id="${p.id}" title="Notify when out of stock">
                 ${p.is_subscribed ? '🔔' : '🔕'}
             </button>
@@ -106,9 +109,17 @@ function renderProducts() {
     // Long-press to edit / delete
     list.querySelectorAll(".product-card").forEach((card) => {
         card.addEventListener("click", (e) => {
-            // Don't trigger if clicking qty buttons
-            if (e.target.closest(".qty-btn") || e.target.closest(".btn-sub")) return;
+            // Don't trigger if clicking qty buttons, sub, or request
+            if (e.target.closest(".qty-btn") || e.target.closest(".btn-sub") || e.target.closest(".btn-request")) return;
             openEditProduct(card.dataset.id);
+        });
+    });
+
+    // Request buttons
+    list.querySelectorAll(".btn-request").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            sendRequest(btn.dataset.id);
         });
     });
 
@@ -172,6 +183,16 @@ async function toggleSubscription(productId) {
         }
     } catch (err) {
         toast("Failed to toggle subscription");
+    }
+}
+
+// ── Send Shopping Request ──
+async function sendRequest(productId) {
+    try {
+        await api("POST", `/products/${productId}/request`);
+        toast("Request sent to family! 🛒");
+    } catch (err) {
+        toast("Failed to send request");
     }
 }
 

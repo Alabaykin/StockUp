@@ -358,6 +358,20 @@ body {
     text-overflow: ellipsis;
 }
 
+.btn-request {
+    background: none;
+    border: none;
+    font-size: 20px;
+    padding: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    opacity: 0.6;
+}
+
+.btn-request:active {
+    transform: scale(1.2);
+}
+
 .btn-sub {
     background: none;
     border: none;
