@@ -333,20 +333,22 @@ function renderCategorySelect() {
 
 // ── Event Listeners ──
 document.addEventListener("DOMContentLoaded", () => {
-    ...
     // Category management
-    $("#btn-add-category").onclick = async () => {
-        const name = prompt("Enter new category name:");
-        if (!name) return;
-        try {
-            const newCat = await api("POST", "/categories/", { name });
-            categories.push(newCat);
-            renderCategorySelect();
-            $("#select-category").value = newCat.id;
-        } catch (err) {
-            toast("Failed to create category");
-        }
-    };
+    const btnAddCat = $("#btn-add-category");
+    if (btnAddCat) {
+        btnAddCat.onclick = async () => {
+            const name = prompt("Enter new category name:");
+            if (!name) return;
+            try {
+                const newCat = await api("POST", "/categories/", { name });
+                categories.push(newCat);
+                renderCategorySelect();
+                $("#select-category").value = newCat.id;
+            } catch (err) {
+                toast("Failed to create category");
+            }
+        };
+    }
     // Init Telegram Web App
     if (tg) {
         tg.ready();
