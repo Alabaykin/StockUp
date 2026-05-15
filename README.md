@@ -1,64 +1,61 @@
 # StockUp 🛒 — Family Shopping Assistant
 
-StockUp — это современное приложение (Telegram Web App) для управления совместными семейными покупками. Оно помогает отслеживать остатки продуктов, автоматически подбирает иконки (эмодзи) к товарам и уведомляет членов семьи, когда что-то заканчивается.
+StockUp is a modern application (Telegram Web App) for managing joint family purchases. It helps track groceries inventory, automatically assigns icons (emojis) to products, and notifies family members when something runs out.
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
-### 1. Подготовка окружения
-Создайте файл `.env` в корне проекта (на основе примера):
+### 1. Environment Setup
+Create a `.env` file in the root of the project (based on the example):
 ```env
 BOT_TOKEN=your_telegram_bot_token
-WEBAPP_URL=https://your-ngrok-url.ngrok-free.app/ # URL для открытия Web App в Telegram
+WEBAPP_URL=https://your-ngrok-url.ngrok-free.app/ # URL to open the Web App in Telegram
 DATABASE_URL=postgresql+asyncpg://stockup_user:stockup_password@db:5432/stockup_db
 REDIS_URL=redis://redis:6379/0
 ```
 
-### 2. Запуск через Docker
+### 2. Run with Docker
 ```bash
 docker-compose up --build -d
 ```
-Приложение будет доступно по адресу: [http://localhost:8000](http://localhost:8000)
+The application will be available at: [http://localhost:8000](http://localhost:8000)
 
-## 🏗 Архитектура
+## 🏗 Architecture
 
-Проект построен по модульной схеме с использованием брокера сообщений:
+The project is built on a modular architecture using a message broker:
 
 1.  **Backend (Python/FastAPI)**:
-    *   Основной API для фронтенда.
-    *   Интеграция с Telegram (Aiogram) для запуска Web App.
-    *   **NLP Service**: Автоматическая лемматизация названий и подбор эмодзи (использует `nltk` для английского и `pymorphy3` для русского).
-    *   Публикация событий (уведомлений) в Redis.
+    *   Main API for the frontend.
+    *   Telegram Integration (Aiogram) to launch the Web App.
+    *   **NLP Service**: Automatic lemmatization of names and emoji assignment (uses `nltk` for English and `pymorphy3` for Russian).
+    *   Publishes events (notifications) to Redis.
 2.  **Notifier (Go)**:
-    *   Легковесный воркер, который слушает канал `notifications` в Redis.
-    *   Отправляет реальные уведомления в Telegram через Bot API.
+    *   A lightweight worker that listens to the `notifications` channel in Redis.
+    *   Sends real notifications to Telegram via the Bot API.
 3.  **Frontend (JS/CSS SPA)**:
-    *   Нативный дизайн в стиле Telegram (Dark Mode, CSS-переменные темы).
-    *   Работает как Single Page Application без тяжелых фреймворков.
+    *   Native design in Telegram style (Dark Mode, CSS theme variables).
+    *   Works as a Single Page Application without heavy frameworks.
 4.  **Database (PostgreSQL)**:
-    *   Хранение пользователей, семей, продуктов и категорий.
-    *   Миграции управляются через Alembic.
+    *   Storage for users, families, products, and categories.
+    *   Migrations are managed via Alembic.
 
-## ✨ Ключевые фичи
+## ✨ Key Features
 
-*   **Мультиязычность**: Поддержка RU/EN на уровне NLP и интерфейса.
-*   **Авто-эмодзи**: Напишите "Milk" или "Молоко" — система сама поставит 🥛.
-*   **Подписки (Alerts)**: Нажмите 🔔 на продукте, и бот напишет вам лично, когда он закончится.
-*   **Запрос на покупку (Shopping Request)**: Нажмите 🛒, чтобы отправить всей семье уведомление «Нам нужно это купить!».
-*   **Категории**: Группировка товаров для удобного поиска.
+*   **Multilingual Support**: Supports EN/RU at the NLP and interface level.
+*   **Auto-Emoji**: Type "Milk" or "Молоко" — the system will automatically assign 🥛.
+*   **Subscriptions (Alerts)**: Tap 🔔 on a product, and the bot will message you personally when it runs out.
+*   **Shopping Request**: Tap 🛒 to send a notification to the whole family: "We need to buy this!".
+*   **Categories**: Group products for easy search.
 
-## 🛠 Что нужно доделать (Backlog)
+## 🛠 To-Do (Backlog)
 
-1.  **Группировка в UI**: Сейчас товары в списке идут в ряд. Нужно добавить визуальное разделение по категориям в `renderProducts()`.
-2.  **Удаление категорий**: API для удаления есть, но в интерфейсе кнопки удаления категории пока нет.
-3.  **Поиск и фильтрация**: Добавить строку поиска товаров по названию.
-4.  **Настоящий деплой**: Настроить SSL и стабильный домен для Web App (сейчас для тестов в Telegram нужен ngrok).
-5.  **Логика "Сходить в магазин"**: Список покупок, который можно "закрывать" по мере наполнения корзины.
+1.  **UI Grouping**: Currently, products in the list are shown in a single row. Visual separation by categories needs to be added in `renderProducts()`.
+2.  **Delete Categories**: The API for deletion exists, but there is no category deletion button in the interface yet.
+3.  **Search and Filtering**: Add a search bar to search products by name.
+4.  **Real Deployment**: Configure SSL and a stable domain for the Web App (currently, ngrok is required for testing in Telegram).
+5.  **"Go Shopping" Logic**: A shopping list that can be "checked off" as the cart fills up.
 
-## 👨‍💻 Для разработчиков
+## 👨‍💻 For Developers
 
-*   **Миграции**: `docker-compose exec backend alembic upgrade head`
-*   **Логи воркера**: `docker-compose logs -f notifier`
-*   **Документация API**: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-Разработано с любовью и помощью AI. 🤖✨
+*   **Migrations**: `docker-compose exec backend alembic upgrade head`
+*   **Worker Logs**: `docker-compose logs -f notifier`
+*   **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
