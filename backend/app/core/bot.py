@@ -33,6 +33,6 @@ async def start_bot():
     try:
         bot = Bot(token=settings.BOT_TOKEN)
         print("Starting Telegram Bot...")
-        await dp.start_polling(bot)
+        await dp.start_polling(bot, handle_signals=False)
     except Exception as e:
         print(f"Failed to start Telegram Bot: {e}")
