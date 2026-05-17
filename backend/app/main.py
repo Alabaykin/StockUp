@@ -7,9 +7,12 @@ import os
 from app.core.config import settings
 
 import asyncio
+import logging
 from app.api.routes import family, products, user, categories, subscriptions
 from app.core.bot import start_bot
 from app.core.redis import init_redis
+
+logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
