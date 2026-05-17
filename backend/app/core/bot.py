@@ -12,7 +12,7 @@ async def cmd_start(message: types.Message):
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(
         text="Open StockUp 🛒", 
-        web_app=types.WebAppInfo(url="https://your-domain.com/")
+        web_app=types.WebAppInfo(url=settings.WEBAPP_URL)
     ))
     
     await message.answer(

@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str
     BOT_TOKEN: str
+    WEBAPP_URL: str
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
