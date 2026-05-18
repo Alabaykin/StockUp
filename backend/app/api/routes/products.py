@@ -64,6 +64,12 @@ async def create_product(
     db.add(new_product)
     await db.commit()
     await db.refresh(new_product)
+    
+    r = await get_redis()
+    if r:
+        ws_payload = {"action": "create", "product": ProductRead.model_validate(new_product).model_dump(mode="json")}
+        await r.publish(f"family:{new_product.family_id}:updates", json.dumps(ws_payload))
+        
     return new_product
 
 @router.put("/{product_id}", response_model=ProductRead)
@@ -97,6 +103,11 @@ async def update_product(
 
     await db.commit()
     await db.refresh(product)
+    
+    r = await get_redis()
+    if r:
+        ws_payload = {"action": "update", "product": ProductRead.model_validate(product).model_dump(mode="json")}
+        await r.publish(f"family:{product.family_id}:updates", json.dumps(ws_payload))
     
     # Check if quantity hit zero to notify family members
     if product.quantity == 0:
@@ -187,6 +198,12 @@ async def delete_product(
 
     await db.delete(product)
     await db.commit()
+    
+    r = await get_redis()
+    if r:
+        ws_payload = {"action": "delete", "product_id": str(product.id)}
+        await r.publish(f"family:{current_user.family_id}:updates", json.dumps(ws_payload))
+        
     return {"status": "ok", "message": "Product deleted"}
 
 @router.post("/{product_id}/request")
