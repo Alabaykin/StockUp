@@ -414,8 +414,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnDeleteProduct = $("#btn-delete-product");
     if (btnDeleteProduct) {
         btnDeleteProduct.addEventListener("click", () => {
-            if (editingProductId && confirm("Are you sure you want to delete this product?")) {
-                deleteProduct(editingProductId);
+            if (!editingProductId) return;
+            
+            const isRu = (currentUser?.language === "ru");
+            const msg = isRu ? "Вы действительно хотите удалить этот продукт?" : "Are you sure you want to delete this product?";
+            
+            if (tg && typeof tg.showConfirm === "function") {
+                tg.showConfirm(msg, (confirmed) => {
+                    if (confirmed) {
+                        deleteProduct(editingProductId);
+                    }
+                });
+            } else {
+                if (confirm(msg)) {
+                    deleteProduct(editingProductId);
+                }
             }
         });
     }
