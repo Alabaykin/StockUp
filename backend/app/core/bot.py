@@ -38,6 +38,19 @@ async def start_bot():
         bot = Bot(token=settings.BOT_TOKEN)
         print("Starting Telegram Bot...")
         
+        # Set the global Menu Button
+        try:
+            await bot.set_chat_menu_button(
+                menu_button=types.MenuButtonWebApp(
+                    type="web_app",
+                    text="Open App",
+                    web_app=types.WebAppInfo(url=settings.WEBAPP_URL)
+                )
+            )
+            print("Successfully set Menu Button Web App")
+        except Exception as e:
+            print(f"Failed to set Menu Button: {e}")
+            
         await dp.start_polling(bot, handle_signals=False)
         
     except Exception as e:
