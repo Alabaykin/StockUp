@@ -116,8 +116,8 @@ async def update_product(
             }
             await r.publish("notifications", json.dumps(payload))
 
-    # Check if product is back in stock (quantity increased from 0)
-    elif prev_quantity == 0 and product.quantity > 0:
+    # Check if quantity increased (product purchased / back in stock)
+    elif product.quantity > (prev_quantity or 0.0):
         r = await get_redis()
         if r:
             notified_users = set()
@@ -147,23 +147,25 @@ async def update_product(
                     await r.publish("notifications", json.dumps(payload))
                     notified_users.update(req_subscribers)
             
-            # Get subscribers to notify (back in stock)
-            sub_stmt = select(ProductSubscription.user_id).where(ProductSubscription.product_id == product.id)
-            sub_result = await db.execute(sub_stmt)
-            subscribers = sub_result.scalars().all()
-            
-            # Exclude buyer and people who already got request_fulfilled
-            bis_subscribers = [s for s in subscribers if s != current_user.telegram_id and s not in notified_users]
-            if bis_subscribers:
-                payload = {
-                    "type": "back_in_stock",
-                    "product_name": product.name,
-                    "product_emoji": product.emoji,
-                    "family_id": str(product.family_id),
-                    "subscribers": bis_subscribers,
-                    "user_name": current_user.first_name or current_user.username or "Кто-то"
-                }
-                await r.publish("notifications", json.dumps(payload))
+            # Check if product is back in stock (went from 0/None to >0)
+            if (prev_quantity == 0 or prev_quantity is None) and product.quantity > 0:
+                # Get subscribers to notify (back in stock)
+                sub_stmt = select(ProductSubscription.user_id).where(ProductSubscription.product_id == product.id)
+                sub_result = await db.execute(sub_stmt)
+                subscribers = sub_result.scalars().all()
+                
+                # Exclude buyer and people who already got request_fulfilled
+                bis_subscribers = [s for s in subscribers if s != current_user.telegram_id and s not in notified_users]
+                if bis_subscribers:
+                    payload = {
+                        "type": "back_in_stock",
+                        "product_name": product.name,
+                        "product_emoji": product.emoji,
+                        "family_id": str(product.family_id),
+                        "subscribers": bis_subscribers,
+                        "user_name": current_user.first_name or current_user.username or "Кто-то"
+                    }
+                    await r.publish("notifications", json.dumps(payload))
 
     return product
 
