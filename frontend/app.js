@@ -35,6 +35,60 @@ async function api(method, path, body = null) {
     return res.json();
 }
 
+// ── WebSocket ──
+let ws = null;
+let wsReconnectTimer = null;
+
+function connectWebSocket() {
+    if (ws) ws.close();
+    
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.host;
+    const wsUrl = `${proto}//${host}${API_BASE}/ws?initData=${encodeURIComponent(getInitData())}`;
+    
+    ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+        console.log("WebSocket connected!");
+        if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+        
+        // Keep-alive ping for Cloudflare tunnels
+        ws.pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) ws.send("ping");
+        }, 30000);
+    };
+    
+    ws.onmessage = (event) => {
+        if (event.data === "pong") return;
+        try {
+            const data = JSON.parse(event.data);
+            if (data.action === "create") {
+                if (!products.find(p => p.id === data.product.id)) {
+                    products.push(data.product);
+                    renderProducts();
+                }
+            } else if (data.action === "update") {
+                const idx = products.findIndex(p => p.id === data.product.id);
+                if (idx !== -1) {
+                    products[idx] = { ...products[idx], ...data.product };
+                    renderProducts();
+                }
+            } else if (data.action === "delete") {
+                products = products.filter(p => p.id !== data.product_id);
+                renderProducts();
+            }
+        } catch (e) {
+            console.error("WS Parse error", e);
+        }
+    };
+    
+    ws.onclose = () => {
+        console.log("WebSocket disconnected. Reconnecting in 3s...");
+        if (ws.pingInterval) clearInterval(ws.pingInterval);
+        wsReconnectTimer = setTimeout(connectWebSocket, 3000);
+    };
+}
+
 // ── DOM helpers ──
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -379,6 +433,7 @@ async function loadApp() {
         renderCategorySelect();
 
         showScreen("screen-products");
+        connectWebSocket();
     } catch (err) {
         console.error("Failed to load app:", err);
         if (loaderText) {
