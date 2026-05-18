@@ -30,11 +30,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="StockUp API", lifespan=lifespan)
 
+from app.api import websockets
+
 app.include_router(family.router, prefix="/api/v1/family", tags=["Family"])
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])
 app.include_router(subscriptions.router, prefix="/api/v1/subscriptions", tags=["Subscriptions"])
 app.include_router(user.router, prefix="/api/v1/user", tags=["User"])
+app.include_router(websockets.router, prefix="/api/v1", tags=["WebSockets"])
 
 @app.get("/health")
 async def health_check():
