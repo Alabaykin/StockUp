@@ -11,7 +11,9 @@ import json
 
 def validate_telegram_data(init_data: str, bot_token: str) -> dict:
     try:
-        parsed_data = dict(parse_qsl(init_data))
+        # keep_blank_values=True is critical for Web Apps launched from ReplyKeyboardMarkup
+        # because Telegram sends some empty fields (like chat_instance= or receiver=)
+        parsed_data = dict(parse_qsl(init_data, keep_blank_values=True))
         if "hash" not in parsed_data:
             return None
 
