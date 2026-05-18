@@ -27,3 +27,4 @@ dist/
 
 start.ps1
 cloudflared.log
+CF.sh
