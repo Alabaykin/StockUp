@@ -88,29 +88,21 @@ function renderProducts() {
                     ${p.description ? escHtml(p.description) : ""}
                 </div>
             </div>
-            <button class="btn-request" data-id="${p.id}" title="Request purchase">
+            <div class="product-qty-static" style="margin-left: auto; text-align: right; flex-shrink: 0;">
+                <span class="qty-value" style="font-size: 15px; font-weight: 600;">${formatQty(p.quantity)}</span>
+                <span class="qty-unit" style="font-size: 12px; color: var(--text-secondary); margin-left: 2px;">${p.unit || ""}</span>
+            </div>
+            <button class="btn-request" data-id="${p.id}" title="Request purchase" style="margin-left: 8px;">
                 🛒
             </button>
-            <button class="btn-sub ${p.is_subscribed ? 'active' : ''}" data-id="${p.id}" title="Notify when out of stock">
-                ${p.is_subscribed ? '🔔' : '🔕'}
-            </button>
-            <div class="product-qty">
-                <button class="qty-btn" data-action="dec" data-id="${p.id}">−</button>
-                <div>
-                    <span class="qty-value">${formatQty(p.quantity)}</span>
-                    <span class="qty-unit">${p.unit || ""}</span>
-                </div>
-                <button class="qty-btn" data-action="inc" data-id="${p.id}">+</button>
-            </div>
         </div>`
         )
         .join("");
 
-    // Long-press to edit / delete
+    // Click to edit
     list.querySelectorAll(".product-card").forEach((card) => {
         card.addEventListener("click", (e) => {
-            // Don't trigger if clicking qty buttons, sub, or request
-            if (e.target.closest(".qty-btn") || e.target.closest(".btn-sub") || e.target.closest(".btn-request")) return;
+            if (e.target.closest(".btn-request")) return;
             openEditProduct(card.dataset.id);
         });
     });
@@ -120,22 +112,6 @@ function renderProducts() {
         btn.addEventListener("click", (e) => {
             e.stopPropagation();
             sendRequest(btn.dataset.id);
-        });
-    });
-
-    // Sub buttons
-    list.querySelectorAll(".btn-sub").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            toggleSubscription(btn.dataset.id);
-        });
-    });
-
-    // Qty buttons
-    list.querySelectorAll(".qty-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            handleQtyChange(btn.dataset.id, btn.dataset.action);
         });
     });
 }
@@ -202,6 +178,7 @@ function openAddProduct() {
     $("#modal-product-title").textContent = "Add Product";
     $("#btn-save-product").innerHTML = '<span class="btn-icon">💾</span> Save';
     $("#btn-delete-product").classList.add("hidden");
+    $("#group-subscribe").classList.add("hidden");
     $("#form-product").reset();
     $("#select-category").value = "";
     $("#input-qty").value = "1";
@@ -218,6 +195,8 @@ function openEditProduct(productId) {
     $("#modal-product-title").textContent = "Edit Product";
     $("#btn-save-product").innerHTML = '<span class="btn-icon">💾</span> Update';
     $("#btn-delete-product").classList.remove("hidden");
+    $("#group-subscribe").classList.remove("hidden");
+    $("#input-subscribed").checked = !!product.is_subscribed;
     $("#input-name").value = product.name;
     $("#input-qty").value = product.quantity;
     $("#input-unit").value = product.unit || "pcs";
@@ -247,14 +226,23 @@ async function saveProduct(e) {
         if (editingProductId) {
             const updated = await api("PUT", `/products/${editingProductId}`, body);
             const idx = products.findIndex((p) => p.id === editingProductId);
-            if (idx !== -1) products[idx] = updated;
-            toast("Product updated ✓");
+            const oldProduct = idx !== -1 ? products[idx] : null;
+            if (idx !== -1) products[idx] = { ...updated, is_subscribed: oldProduct.is_subscribed };
+
+            // Check if subscription changed
+            const wantSubscribed = $("#input-subscribed").checked;
+            if (oldProduct && !!oldProduct.is_subscribed !== wantSubscribed) {
+                await toggleSubscription(editingProductId);
+            } else {
+                toast("Product updated ✓");
+                renderProducts();
+            }
         } else {
             const created = await api("POST", "/products/", body);
             products.push(created);
             toast(`${created.emoji || "📦"} ${created.name} added!`);
+            renderProducts();
         }
-        renderProducts();
         hideModal("modal-product");
     } catch (err) {
         toast("Error: " + err.message);
@@ -362,6 +350,8 @@ async function loadApp() {
         const isRu = currentUser.language === "ru";
         $("#btn-leave-family").previousElementSibling.textContent = isRu ? "Выйти из семьи" : "Leave family";
         $("#btn-leave-family").textContent = isRu ? "Выйти" : "Leave";
+
+        $("#group-subscribe label").textContent = isRu ? "Уведомлять, когда закончится" : "Notify when out of stock";
 
         // 4. Load products and categories
         console.log("Fetching products & categories...");
