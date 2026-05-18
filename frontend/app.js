@@ -222,6 +222,14 @@ async function saveProduct(e) {
         return;
     }
 
+    const btnSave = $("#btn-save-product");
+    const originalHtml = btnSave.innerHTML;
+    
+    btnSave.disabled = true;
+    btnSave.style.opacity = "0.7";
+    const isRu = (currentUser?.language === "ru");
+    btnSave.innerHTML = `<span class="btn-icon">⏳</span> ${isRu ? "Сохранение..." : "Saving..."}`;
+
     try {
         if (editingProductId) {
             const updated = await api("PUT", `/products/${editingProductId}`, body);
@@ -246,6 +254,10 @@ async function saveProduct(e) {
         hideModal("modal-product");
     } catch (err) {
         toast("Error: " + err.message);
+    } finally {
+        btnSave.disabled = false;
+        btnSave.style.opacity = "";
+        btnSave.innerHTML = originalHtml;
     }
 }
 
