@@ -43,5 +43,46 @@ async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(ge
     if not user:
         return
         
-    # Basic skeleton: just close for now
-    await websocket.close(code=1000)
+    redis_client = await get_redis()
+    pubsub = redis_client.pubsub()
+    channel_name = f"family:{user.family_id}:updates"
+    
+    await pubsub.subscribe(channel_name)
+    
+    try:
+        # We need two tasks: one to read from websocket (to detect disconnects),
+        # one to read from redis and send to websocket.
+        
+        async def read_from_ws():
+            try:
+                while True:
+                    # Cloudflare might drop inactive connections. 
+                    # We can handle ping/pong here if needed.
+                    data = await websocket.receive_text()
+                    if data == "ping":
+                        await websocket.send_text("pong")
+            except WebSocketDisconnect:
+                pass
+
+        async def read_from_redis():
+            try:
+                async for message in pubsub.listen():
+                    if message["type"] == "message":
+                        await websocket.send_text(message["data"])
+            except Exception:
+                pass
+
+        ws_task = asyncio.create_task(read_from_ws())
+        redis_task = asyncio.create_task(read_from_redis())
+        
+        done, pending = await asyncio.wait(
+            [ws_task, redis_task], 
+            return_when=asyncio.FIRST_COMPLETED
+        )
+        
+        for task in pending:
+            task.cancel()
+            
+    finally:
+        await pubsub.unsubscribe(channel_name)
+        await pubsub.close()
