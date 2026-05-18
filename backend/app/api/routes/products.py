@@ -82,7 +82,8 @@ async def update_product(
     product = result.scalars().first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-
+    
+    prev_quantity = product.quantity
     update_data = product_in.model_dump(exclude_unset=True)
     
     # If name changed, re-run NLP
@@ -114,6 +115,55 @@ async def update_product(
                 "subscribers": subscribers
             }
             await r.publish("notifications", json.dumps(payload))
+
+    # Check if product is back in stock (quantity increased from 0)
+    elif prev_quantity == 0 and product.quantity > 0:
+        r = await get_redis()
+        if r:
+            notified_users = set()
+            
+            # Check if this product was requested
+            req_key = f"product:{product.id}:requested"
+            was_requested = await r.exists(req_key)
+            if was_requested:
+                await r.delete(req_key)
+                
+                # Get all family members to notify
+                members_stmt = select(User.telegram_id).where(User.family_id == product.family_id)
+                members_result = await db.execute(members_stmt)
+                members = members_result.scalars().all()
+                
+                # Exclude the buyer (current_user)
+                req_subscribers = [m for m in members if m != current_user.telegram_id]
+                if req_subscribers:
+                    payload = {
+                        "type": "request_fulfilled",
+                        "product_name": product.name,
+                        "product_emoji": product.emoji,
+                        "family_id": str(product.family_id),
+                        "subscribers": req_subscribers,
+                        "user_name": current_user.first_name or current_user.username or "Кто-то"
+                    }
+                    await r.publish("notifications", json.dumps(payload))
+                    notified_users.update(req_subscribers)
+            
+            # Get subscribers to notify (back in stock)
+            sub_stmt = select(ProductSubscription.user_id).where(ProductSubscription.product_id == product.id)
+            sub_result = await db.execute(sub_stmt)
+            subscribers = sub_result.scalars().all()
+            
+            # Exclude buyer and people who already got request_fulfilled
+            bis_subscribers = [s for s in subscribers if s != current_user.telegram_id and s not in notified_users]
+            if bis_subscribers:
+                payload = {
+                    "type": "back_in_stock",
+                    "product_name": product.name,
+                    "product_emoji": product.emoji,
+                    "family_id": str(product.family_id),
+                    "subscribers": bis_subscribers,
+                    "user_name": current_user.first_name or current_user.username or "Кто-то"
+                }
+                await r.publish("notifications", json.dumps(payload))
 
     return product
 
@@ -160,6 +210,9 @@ async def request_product(
 
     r = await get_redis()
     if r:
+        # Mark as requested in Redis (7 days expiration)
+        await r.setex(f"product:{product.id}:requested", 604800, "1")
+
         payload = {
             "type": "shopping_request",
             "product_name": product.name,

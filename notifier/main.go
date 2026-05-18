@@ -74,6 +74,10 @@ func processNotification(n Notification, token string) {
 		message = fmt.Sprintf("⚠️ *Out of Stock!*\n\n%s %s is finished. Time to buy more!", n.ProductEmoji, n.ProductName)
 	case "shopping_request":
 		message = fmt.Sprintf("🛒 *Shopping Request*\n\n%s says we need: %s %s", n.UserName, n.ProductEmoji, n.ProductName)
+	case "back_in_stock":
+		message = fmt.Sprintf("✨ *Снова в наличии!*\n\n%s %s снова в наличии! (куплено %s)", n.ProductEmoji, n.ProductName, n.UserName)
+	case "request_fulfilled":
+		message = fmt.Sprintf("✅ *Запрос выполнен!*\n\n%s %s запрашивали в семью — товар успешно куплен %s!", n.ProductEmoji, n.ProductName, n.UserName)
 	default:
 		message = fmt.Sprintf("🔔 *Notification*\n\n%s %s needs attention.", n.ProductEmoji, n.ProductName)
 	}
