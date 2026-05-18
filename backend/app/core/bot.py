@@ -11,13 +11,6 @@ dp = Dispatcher()
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    # Reply Keyboard (always visible at the bottom)
-    reply_builder = ReplyKeyboardBuilder()
-    reply_builder.add(types.KeyboardButton(
-        text="🛒 Open StockUp", 
-        web_app=types.WebAppInfo(url=settings.WEBAPP_URL)
-    ))
-    
     # Inline Keyboard (attached to the message)
     inline_builder = InlineKeyboardBuilder()
     inline_builder.row(types.InlineKeyboardButton(
@@ -27,12 +20,8 @@ async def cmd_start(message: types.Message):
     
     await message.answer(
         f"Hello, {message.from_user.first_name}! 👋\n\n"
-        "Welcome to StockUp — your family shopping assistant.",
-        reply_markup=reply_builder.as_markup(resize_keyboard=True)
-    )
-    
-    await message.answer(
-        "Click the button below or in the menu to manage your inventory:",
+        "Welcome to StockUp — your family shopping assistant.\n"
+        "Click the button below to manage your inventory:",
         reply_markup=inline_builder.as_markup()
     )
 
