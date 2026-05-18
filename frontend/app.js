@@ -300,6 +300,17 @@ async function joinFamily(e) {
     }
 }
 
+async function leaveFamily() {
+    try {
+        await api("POST", "/family/leave");
+        toast(currentUser?.language === "ru" ? "Вы вышли из семьи" : "Left family");
+        hideModal("modal-settings");
+        await loadApp();
+    } catch (err) {
+        toast("Error: " + err.message);
+    }
+}
+
 // ── Language change ──
 async function changeLanguage(lang) {
     try {
@@ -347,6 +358,10 @@ async function loadApp() {
         $("#family-info").textContent = `Invite code: ${family.invite_code}`;
         $("#invite-code-display").textContent = family.invite_code;
         $("#select-lang").value = currentUser.language || "en";
+
+        const isRu = currentUser.language === "ru";
+        $("#btn-leave-family").previousElementSibling.textContent = isRu ? "Выйти из семьи" : "Leave family";
+        $("#btn-leave-family").textContent = isRu ? "Выйти" : "Leave";
 
         // 4. Load products and categories
         console.log("Fetching products & categories...");
@@ -443,6 +458,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const code = $("#invite-code-display").textContent;
         navigator.clipboard?.writeText(code);
         toast("Code copied! " + code);
+    });
+    $("#btn-leave-family").addEventListener("click", () => {
+        const isRu = (currentUser?.language === "ru");
+        const msg = isRu ? "Вы действительно хотите выйти из этой семьи?" : "Are you sure you want to leave this family?";
+        
+        if (tg && typeof tg.showConfirm === "function") {
+            tg.showConfirm(msg, (confirmed) => {
+                if (confirmed) leaveFamily();
+            });
+        } else {
+            if (confirm(msg)) leaveFamily();
+        }
     });
 
     // Language selector

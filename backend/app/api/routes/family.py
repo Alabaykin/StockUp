@@ -71,3 +71,16 @@ async def get_my_family(
         raise HTTPException(status_code=404, detail="Family not found")
         
     return family
+
+@router.post("/leave")
+async def leave_family(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if not current_user.family_id:
+        raise HTTPException(status_code=400, detail="User is not in a family")
+
+    current_user.family_id = None
+    await db.commit()
+    
+    return {"status": "left"}
