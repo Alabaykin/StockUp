@@ -201,6 +201,7 @@ function openAddProduct() {
     editingProductId = null;
     $("#modal-product-title").textContent = "Add Product";
     $("#btn-save-product").innerHTML = '<span class="btn-icon">💾</span> Save';
+    $("#btn-delete-product").classList.add("hidden");
     $("#form-product").reset();
     $("#select-category").value = "";
     $("#input-qty").value = "1";
@@ -216,6 +217,7 @@ function openEditProduct(productId) {
     editingProductId = productId;
     $("#modal-product-title").textContent = "Edit Product";
     $("#btn-save-product").innerHTML = '<span class="btn-icon">💾</span> Update';
+    $("#btn-delete-product").classList.remove("hidden");
     $("#input-name").value = product.name;
     $("#input-qty").value = product.quantity;
     $("#input-unit").value = product.unit || "pcs";
@@ -409,6 +411,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Product form
     $("#form-product").addEventListener("submit", saveProduct);
     $("#btn-add-product").addEventListener("click", openAddProduct);
+    const btnDeleteProduct = $("#btn-delete-product");
+    if (btnDeleteProduct) {
+        btnDeleteProduct.addEventListener("click", () => {
+            if (editingProductId && confirm("Are you sure you want to delete this product?")) {
+                deleteProduct(editingProductId);
+            }
+        });
+    }
 
     // Join form
     $("#form-join").addEventListener("submit", joinFamily);
@@ -431,6 +441,47 @@ document.addEventListener("DOMContentLoaded", () => {
     $$(".modal-backdrop").forEach((bd) => {
         bd.addEventListener("click", () => {
             bd.closest(".modal").classList.add("hidden");
+        });
+    });
+
+    // Swipe-to-close modals
+    $$(".modal-sheet").forEach((sheet) => {
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+
+        sheet.addEventListener("touchstart", (e) => {
+            // Start drag only if scrolled to top
+            if (sheet.scrollTop > 0) return;
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            sheet.style.transition = "none";
+        }, { passive: true });
+
+        sheet.addEventListener("touchmove", (e) => {
+            if (!isDragging) return;
+            const deltaY = e.touches[0].clientY - startY;
+            if (deltaY > 0) {
+                currentY = deltaY;
+                sheet.style.transform = `translateY(${currentY}px)`;
+                if (e.cancelable) e.preventDefault();
+            }
+        }, { passive: false });
+
+        sheet.addEventListener("touchend", () => {
+            if (!isDragging) return;
+            isDragging = false;
+            sheet.style.transition = "transform 0.3s ease";
+            
+            if (currentY > 120) {
+                // Close if swiped down far enough
+                sheet.closest(".modal").classList.add("hidden");
+                setTimeout(() => { sheet.style.transform = ""; }, 300);
+            } else {
+                // Snap back
+                sheet.style.transform = "";
+            }
+            currentY = 0;
         });
     });
 

@@ -106,9 +106,14 @@
                         <label for="input-desc">Note <span class="optional">(optional)</span></label>
                         <input type="text" id="input-desc" placeholder="e.g. Buy at Costco">
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-save-product">
-                        <span class="btn-icon">💾</span> Save
-                    </button>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="submit" class="btn btn-primary btn-lg flex-1" id="btn-save-product">
+                            <span class="btn-icon">💾</span> Save
+                        </button>
+                        <button type="button" class="btn btn-destructive btn-lg hidden" id="btn-delete-product" style="padding: 0 16px;">
+                            <span class="btn-icon">🗑️</span>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
