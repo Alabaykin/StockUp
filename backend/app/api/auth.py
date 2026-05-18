@@ -1,6 +1,6 @@
 import hmac
 import hashlib
-from urllib.parse import parse_qsl
+from urllib.parse import unquote
 from fastapi import Header, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -9,11 +9,19 @@ from app.db.database import get_db
 from app.db.models import User
 import json
 
+
 def validate_telegram_data(init_data: str, bot_token: str) -> dict:
     try:
-        # keep_blank_values=True is critical for Web Apps launched from ReplyKeyboardMarkup
-        # because Telegram sends some empty fields (like chat_instance= or receiver=)
-        parsed_data = dict(parse_qsl(init_data, keep_blank_values=True))
+        # Manual parsing because parse_qsl uses unquote_plus (which breaks some hashes)
+        # and we must handle empty values properly
+        parsed_data = {}
+        for pair in init_data.split('&'):
+            if '=' in pair:
+                k, v = pair.split('=', 1)
+                parsed_data[k] = unquote(v)
+            else:
+                parsed_data[pair] = ""
+                
         if "hash" not in parsed_data:
             return None
 
