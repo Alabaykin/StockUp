@@ -3,9 +3,11 @@ from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from app.core.config import settings
 
+
 # Global variables, but initialized only if token is valid
 bot = None
 dp = Dispatcher()
+
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -34,6 +36,7 @@ async def cmd_start(message: types.Message):
         reply_markup=inline_builder.as_markup()
     )
 
+
 async def start_bot():
     global bot
     
@@ -56,9 +59,11 @@ async def start_bot():
                 )
             )
             print("Successfully set Menu Button Web App")
+
         except Exception as e:
             print(f"Failed to set Menu Button: {e}")
-            
+
         await dp.start_polling(bot, handle_signals=False)
+        
     except Exception as e:
         print(f"Failed to start Telegram Bot: {e}")
