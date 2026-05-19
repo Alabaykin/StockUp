@@ -11,6 +11,13 @@ dp = Dispatcher()
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
+    # First, send a message with ReplyKeyboardRemove to explicitly clear any cached bottom keyboards on user devices
+    await message.answer(
+        f"Hello, {message.from_user.first_name}! 👋\n\n"
+        "Welcome to StockUp — your family shopping assistant.",
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+    
     # Inline Keyboard (attached to the message)
     inline_builder = InlineKeyboardBuilder()
     inline_builder.row(types.InlineKeyboardButton(
@@ -18,9 +25,8 @@ async def cmd_start(message: types.Message):
         web_app=types.WebAppInfo(url=settings.WEBAPP_URL)
     ))
     
+    # Second, send the message containing the inline button
     await message.answer(
-        f"Hello, {message.from_user.first_name}! 👋\n\n"
-        "Welcome to StockUp — your family shopping assistant.\n"
         "Click the button below to manage your inventory:",
         reply_markup=inline_builder.as_markup()
     )
