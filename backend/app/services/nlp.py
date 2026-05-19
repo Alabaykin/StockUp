@@ -277,10 +277,18 @@ def normalize_product_name(name: str, lang: str = "en") -> str:
     words = cleaned.lower().split()
 
     if lang == "ru":
-        lemmas = [morph_ru.parse(w)[0].normal_form for w in words]
+        try:
+            lemmas = [morph_ru.parse(w)[0].normal_form for w in words]
+        except Exception as e:
+            print(f"NLP: Russian lemmatization fallback due to error: {e}")
+            lemmas = words
     else:
         # English: lemmatize as noun by default
-        lemmas = [lemmatizer_en.lemmatize(w) for w in words]
+        try:
+            lemmas = [lemmatizer_en.lemmatize(w) for w in words]
+        except Exception as e:
+            print(f"NLP: English lemmatization fallback due to error: {e}")
+            lemmas = words
 
     return " ".join(lemmas)
 

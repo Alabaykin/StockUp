@@ -301,9 +301,12 @@ async function saveProduct(e) {
             }
         } else {
             const created = await api("POST", "/products/", body);
-            products.push(created);
-            toast(`${created.emoji || "📦"} ${created.name} added!`);
-            renderProducts();
+            // Check if WebSocket already pushed it to avoid double-rendering race condition
+            if (!products.find((p) => p.id === created.id)) {
+                products.push(created);
+                toast(`${created.emoji || "📦"} ${created.name} added!`);
+                renderProducts();
+            }
         }
         hideModal("modal-product");
     } catch (err) {
