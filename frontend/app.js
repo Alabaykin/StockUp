@@ -40,7 +40,16 @@ let ws = null;
 let wsReconnectTimer = null;
 
 function connectWebSocket() {
-    if (ws) ws.close();
+    if (wsReconnectTimer) {
+        clearTimeout(wsReconnectTimer);
+        wsReconnectTimer = null;
+    }
+    
+    if (ws) {
+        ws.onclose = null; // Prevent old socket close from triggering onclose reconnect loop!
+        if (ws.pingInterval) clearInterval(ws.pingInterval);
+        ws.close();
+    }
     
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
