@@ -196,6 +196,12 @@ async def delete_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    from sqlalchemy import delete
+    # Delete associated subscriptions first to prevent ForeignKeyViolation errors
+    await db.execute(
+        delete(ProductSubscription).where(ProductSubscription.product_id == product.id)
+    )
+
     await db.delete(product)
     await db.commit()
     
