@@ -4,8 +4,14 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 
 # Download NLTK data (runs once, then cached)
-nltk.download("wordnet", quiet=True)
-nltk.download("omw-1.4", quiet=True)
+try:
+    nltk.download("wordnet", quiet=True, raise_on_error=True)
+except Exception:
+    # Fallback to standard offline download if any issues
+    try:
+        nltk.download("wordnet", quiet=True)
+    except Exception:
+        pass
 
 morph_ru = pymorphy3.MorphAnalyzer()
 lemmatizer_en = WordNetLemmatizer()
