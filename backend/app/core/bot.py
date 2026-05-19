@@ -18,6 +18,19 @@ async def cmd_start(message: types.Message):
         reply_markup=types.ReplyKeyboardRemove()
     )
     
+    # Dynamically register the active WEBAPP_URL in the user's Chat Menu Button to self-heal any failed startup setups
+    try:
+        await message.bot.set_chat_menu_button(
+            chat_id=message.chat.id,
+            menu_button=types.MenuButtonWebApp(
+                type="web_app",
+                text="Open App",
+                web_app=types.WebAppInfo(url=settings.WEBAPP_URL)
+            )
+        )
+    except Exception as e:
+        print(f"Failed to set Menu Button on command start: {e}")
+
     # Inline Keyboard (attached to the message)
     inline_builder = InlineKeyboardBuilder()
     inline_builder.row(types.InlineKeyboardButton(

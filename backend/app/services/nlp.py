@@ -3,15 +3,22 @@ import pymorphy3
 import nltk
 from nltk.stem import WordNetLemmatizer
 
-# Download NLTK data (runs once, then cached)
+# Download NLTK data safely with socket timeout to prevent indefinite hangs on startup
 try:
-    nltk.download("wordnet", quiet=True, raise_on_error=True)
-except Exception:
-    # Fallback to standard offline download if any issues
+    from nltk.corpus import wordnet
+    wordnet.ensure_loaded()
+except (LookupError, AttributeError):
+    import socket
+    old_timeout = socket.getdefaulttimeout()
     try:
+        socket.setdefaulttimeout(5.0)  # 5 seconds max timeout
         nltk.download("wordnet", quiet=True)
     except Exception:
         pass
+    finally:
+        socket.setdefaulttimeout(old_timeout)
+except Exception:
+    pass
 
 morph_ru = pymorphy3.MorphAnalyzer()
 lemmatizer_en = WordNetLemmatizer()
