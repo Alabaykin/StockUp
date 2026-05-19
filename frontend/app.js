@@ -129,6 +129,14 @@ function toast(msg) {
 
 // ── Render Products ──
 function renderProducts() {
+    // Prevent any duplicate items by ID due to asynchronous race conditions
+    const seen = new Set();
+    products = products.filter(p => {
+        if (!p.id || seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+    });
+
     const list = $("#product-list");
     const empty = $("#empty-products");
 
